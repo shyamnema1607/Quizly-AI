@@ -1,0 +1,287 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Turn your study notes into an AI-powered quiz. Practice, understand answers and discover what to revise next.">
+  <meta name="theme-color" content="#f5f7ff">
+  <title>Quizly AI — Turn notes into knowledge</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="home-page">
+  <nav class="topbar">
+    <a class="brand" href="/" aria-label="Quizly AI home">
+      <span class="brand-mark">q</span>
+      <span>quizly<span class="brand-ai">.ai</span></span>
+    </a>
+    <div class="nav-right">
+      <span class="nav-dot"></span>
+      <span>AI-powered study companion</span>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">
+          <span class="sparkle">✦</span>
+          YOUR STUDY SESSION, REIMAGINED
+        </div>
+
+        <h1>
+          Turn your notes into<br>
+          <span class="gradient-text">real understanding.</span>
+        </h1>
+
+        <p class="hero-description">
+          Upload your study material. Get a personalized quiz,
+          instant explanations, and a clear picture of what to revise next.
+        </p>
+
+        <div class="trust-points">
+          <span><span class="checkmark">✓</span> Built around your notes</span>
+          <span><span class="checkmark">✓</span> Feedback that helps you improve</span>
+        </div>
+
+        <div class="hero-note">
+          <div class="note-icon">✧</div>
+          <div>
+            <strong>Study smarter, not longer.</strong>
+            <span>Small practice sessions can make a big difference.</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="upload-card" aria-labelledby="upload-title">
+        <div class="card-heading">
+          <div>
+            <span class="step-label">LET'S GET STARTED</span>
+            <h2 id="upload-title">Create your quiz</h2>
+            <p>Personalize your practice in a few clicks.</p>
+          </div>
+          <div class="card-icon">✎</div>
+        </div>
+
+        {% if error %}
+        <div class="error-alert" role="alert">
+          <span>!</span>
+          <div>{{ error }}</div>
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('upload') }}"
+              method="POST"
+              enctype="multipart/form-data"
+              id="quizSetupForm">
+
+          <label class="field-label" for="pdfFile">Your study material</label>
+
+          <label class="dropzone" for="pdfFile" id="dropzone">
+            <input type="file"
+                   id="pdfFile"
+                   name="pdf_file"
+                   accept="application/pdf,.pdf"
+                   required>
+
+            <span class="upload-symbol" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3"
+                      stroke="currentColor"
+                      stroke-width="1.7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"/>
+              </svg>
+            </span>
+
+            <strong id="fileTitle">Drop your PDF here</strong>
+            <span class="drop-subtitle" id="fileSubtitle">
+              or <span class="browse-text">browse files</span>
+            </span>
+            <span class="file-limit">PDF format · Up to 15 MB</span>
+          </label>
+
+          <div class="settings-grid">
+            <div class="setting-field">
+              <label class="field-label" for="questionCount">
+                Number of questions
+              </label>
+              <div class="select-wrap">
+                <select id="questionCount" name="question_count">
+                  <option value="5">5 questions · Quick review</option>
+                  <option value="10" selected>10 questions · Balanced</option>
+                  <option value="15">15 questions · Deep practice</option>
+                  <option value="20">20 questions · Full practice</option>
+                </select>
+                <span class="select-chevron">⌄</span>
+              </div>
+            </div>
+
+            <div class="setting-field">
+              <label class="field-label" for="difficulty">Difficulty</label>
+              <div class="select-wrap">
+                <select id="difficulty" name="difficulty">
+                  <option value="Easy">Easy · Build confidence</option>
+                  <option value="Medium" selected>Medium · Test understanding</option>
+                  <option value="Hard">Hard · Challenge yourself</option>
+                </select>
+                <span class="select-chevron">⌄</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="primary-button" type="submit" id="generateButton">
+            <span class="button-label">Generate my quiz</span>
+            <span class="button-arrow">↗</span>
+          </button>
+
+          <div class="privacy-note">
+            <span>♢</span>
+            Your uploaded PDF is removed after quiz processing.
+          </div>
+        </form>
+      </section>
+    </section>
+
+    <section class="feature-section">
+      <div class="section-intro">
+        <span class="step-label">MORE THAN A SCORE</span>
+        <h2>
+          Know what you know.<br>
+          <span class="muted-heading">Know what to learn next.</span>
+        </h2>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon purple-icon">✦</div>
+          <h3>Made from your material</h3>
+          <p>
+            Questions are generated from your uploaded notes,
+            keeping practice relevant to your learning.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon blue-icon">◎</div>
+          <h3>Understand every answer</h3>
+          <p>
+            Review explanations after submitting to understand
+            why an answer is correct.
+          </p>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon green-icon">↗</div>
+          <h3>Improve with insight</h3>
+          <p>
+            Explore topic-wise accuracy and get practical
+            revision priorities for your next study session.
+          </p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="/">
+      <span class="brand-mark">q</span>
+      <span>quizly<span class="brand-ai">.ai</span></span>
+    </a>
+    <span>Made for curious minds. Keep learning. ✦</span>
+  </footer>
+
+  <div class="loading-overlay"
+       id="loadingOverlay"
+       aria-live="polite"
+       aria-hidden="true">
+    <div class="loading-card">
+      <div class="loader-orbit"><span></span><span></span><span></span></div>
+      <h2>Building your quiz</h2>
+      <p>Reading your notes and preparing thoughtful questions.</p>
+      <div class="loading-bar"><span></span></div>
+      <small>This can take a little while for larger PDFs.</small>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("pdfFile");
+    const dropzone = document.getElementById("dropzone");
+    const fileTitle = document.getElementById("fileTitle");
+    const fileSubtitle = document.getElementById("fileSubtitle");
+    const form = document.getElementById("quizSetupForm");
+    const overlay = document.getElementById("loadingOverlay");
+    const generateButton = document.getElementById("generateButton");
+
+    function showFile(file) {
+      if (!file) return;
+
+      fileTitle.textContent = file.name;
+      fileSubtitle.textContent =
+        (file.size / (1024 * 1024)).toFixed(2) +
+        " MB · Ready to generate";
+
+      dropzone.classList.add("file-selected");
+    }
+
+    fileInput.addEventListener("change", () => {
+      showFile(fileInput.files[0]);
+    });
+
+    ["dragenter", "dragover"].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropzone.classList.add("dragging");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropzone.classList.remove("dragging");
+      });
+    });
+
+    dropzone.addEventListener("drop", event => {
+      const files = event.dataTransfer.files;
+
+      if (files.length) {
+        const transfer = new DataTransfer();
+        transfer.items.add(files[0]);
+        fileInput.files = transfer.files;
+        showFile(files[0]);
+      }
+    });
+
+    form.addEventListener("submit", event => {
+      const file = fileInput.files[0];
+
+      if (!file) return;
+
+      if (!file.name.toLowerCase().endsWith(".pdf")) {
+        event.preventDefault();
+        alert("Please choose a PDF file.");
+        return;
+      }
+
+      if (file.size > 15 * 1024 * 1024) {
+        event.preventDefault();
+        alert("Please choose a PDF smaller than 15 MB.");
+        return;
+      }
+
+      generateButton.disabled = true;
+      generateButton.querySelector(".button-label").textContent =
+        "Preparing your quiz…";
+
+      overlay.classList.add("visible");
+      overlay.setAttribute("aria-hidden", "false");
+    });
+  </script>
+</body>
+</html>

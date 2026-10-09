@@ -1,0 +1,395 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Practice with your personalized quiz and discover which topics to revise next.">
+  <meta name="theme-color" content="#f5f7ff">
+  <title>Your quiz — Quizly AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="quiz-page">
+  <nav class="topbar quiz-topbar">
+    <a class="brand" href="/"><span class="brand-mark">q</span><span>quizly<span class="brand-ai">.ai</span></span></a>
+    <a class="back-link" href="/">← New quiz</a>
+  </nav>
+
+  <main class="quiz-main">
+    <header class="quiz-intro">
+      <div class="eyebrow"><span class="sparkle">✦</span> YOUR PERSONALIZED PRACTICE</div>
+      <h1>Let's see what <span class="gradient-text">you've learned.</span></h1>
+      <p class="hero-description">Answer at your own pace. Submit when you're ready to see your results and revision insights.</p>
+      <div class="quiz-meta">
+        <span class="meta-pill">📄 <span class="filename-text">{{ filename | default('Study material', true) }}</span></span>
+        <span class="meta-pill">✦ {{ difficulty | default('Medium', true) }} difficulty</span>
+        <span class="meta-pill">☷ {{ questions | length }} questions</span>
+      </div>
+    </header>
+
+    <section class="quiz-progress-card">
+      <div class="progress-topline">
+        <div>
+          <strong>Your progress</strong>
+          <span id="progressText">0 of {{ questions | length }} answered</span>
+        </div>
+        <span class="progress-percent" id="progressPercent">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </section>
+
+    <form id="quizForm" class="questions-list">
+      {% for q in questions %}
+      {% set question_index = loop.index0 %}
+      <section class="question-card" id="question-{{ question_index }}">
+        <div class="question-topline">
+          <span class="question-number">QUESTION {{ "%02d"|format(loop.index) }}</span>
+          <span class="topic-tag">{{ q.topic | default('General concepts', true) }}</span>
+        </div>
+        <h2 class="question-text">{{ q.question }}</h2>
+        <fieldset class="options-fieldset">
+          <legend>Choose one answer</legend>
+          {% for option in q.options %}
+          <label class="answer-option">
+            <input type="radio" name="question_{{ question_index }}" value="{{ option.value | default(option, true) }}" required>
+            <span class="option-letter">{{ option.value | default('•', true) }}</span>
+            <span class="option-label">{{ option.label | default(option, true) }}</span>
+            <span class="option-check">✓</span>
+          </label>
+          {% endfor %}
+        </fieldset>
+      </section>
+      {% endfor %}
+
+      <div class="quiz-submit-row">
+        <p><span class="tiny-shield">✦</span> Your results are calculated on this page.</p>
+        <button class="primary-button submit-quiz-button" type="submit" id="submitButton">
+          <span>See my results</span><span class="button-arrow">↗</span>
+        </button>
+      </div>
+    </form>
+
+    <section id="results" class="results-section hidden" aria-live="polite">
+      <div class="results-hero">
+        <div class="eyebrow"><span class="sparkle">✦</span> YOUR LEARNING SNAPSHOT</div>
+        <h2 id="resultHeading">Nice work showing up.</h2>
+        <p id="resultMessage">Every attempt gives you useful information about what to study next.</p>
+        <div class="score-row">
+          <div class="score-ring" id="scoreRing">
+            <div><strong id="scoreValue">0%</strong><span>overall score</span></div>
+          </div>
+          <div class="score-summary">
+            <strong id="scoreFraction">0 / 0 correct</strong>
+            <span id="scoreDetail">Keep practicing — progress builds one session at a time.</span>
+            <div class="score-meter"><span id="scoreMeter"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="analysis-grid">
+        <article class="analysis-card">
+          <div class="analysis-card-head">
+            <span class="analysis-icon strong-icon">↗</span>
+            <div><h3>Strong topics</h3><p>Areas you're doing well in</p></div>
+          </div>
+          <div id="strongTopics" class="topic-list"></div>
+        </article>
+        <article class="analysis-card">
+          <div class="analysis-card-head">
+            <span class="analysis-icon weak-icon">◎</span>
+            <div><h3>Needs revision</h3><p>Topics to focus on next</p></div>
+          </div>
+          <div id="weakTopics" class="topic-list"></div>
+        </article>
+      </div>
+
+      <article class="revision-card">
+        <div class="revision-title">
+          <span class="revision-icon">✦</span>
+          <div><h3>Your revision plan</h3><p>A simple next step based on your answers</p></div>
+        </div>
+        <ol id="revisionPlan" class="revision-list"></ol>
+      </article>
+
+      <article class="review-card">
+        <div class="review-heading">
+          <div><h3>Answer review</h3><p>Learn from every question, including the ones you got right.</p></div>
+          <span class="review-count" id="reviewCount">0 questions</span>
+        </div>
+        <div id="feedbackList"></div>
+      </article>
+
+      <div class="results-actions">
+        <a href="/" class="primary-button link-button">Create another quiz <span class="button-arrow">↗</span></a>
+        <button type="button" class="secondary-button" id="retakeButton">Try this quiz again</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer quiz-footer">
+    <a class="brand footer-brand" href="/">
+      <span class="brand-mark">q</span><span>quizly<span class="brand-ai">.ai</span></span>
+    </a>
+    <span>Made for curious minds. Keep learning. ✦</span>
+  </footer>
+
+  <script id="quiz-data" type="application/json">{{ questions | tojson }}</script>
+  <script>
+    const quizData = JSON.parse(document.getElementById("quiz-data").textContent);
+    const quizForm = document.getElementById("quizForm");
+    const results = document.getElementById("results");
+    const progressText = document.getElementById("progressText");
+    const progressPercent = document.getElementById("progressPercent");
+    const progressFill = document.getElementById("progressFill");
+
+    function correctValue(q) {
+      if (Array.isArray(q.correctValues) && q.correctValues.length) {
+        return String(q.correctValues[0]);
+      }
+      return String(q.correctAnswer ?? q.answer ?? "");
+    }
+
+    function optionLabel(q, value) {
+      const option = (q.options || []).find(o =>
+        String(typeof o === "object" ? o.value : o) === String(value)
+      );
+      return option
+        ? String(typeof option === "object" ? option.label : option)
+        : String(value);
+    }
+
+    function updateProgress() {
+      const answered = quizData.filter((_, i) =>
+        quizForm.querySelector(`input[name="question_${i}"]:checked`)
+      ).length;
+
+      const percent = quizData.length
+        ? Math.round(answered / quizData.length * 100)
+        : 0;
+
+      progressText.textContent = `${answered} of ${quizData.length} answered`;
+      progressPercent.textContent = `${percent}%`;
+      progressFill.style.width = `${percent}%`;
+    }
+
+    quizForm.addEventListener("change", updateProgress);
+
+    function addTopicRow(container, name, percent, count, kind) {
+      const row = document.createElement("div");
+      row.className = "topic-row";
+
+      const top = document.createElement("div");
+      top.className = "topic-row-top";
+
+      const label = document.createElement("strong");
+      label.textContent = name;
+
+      const pct = document.createElement("span");
+      pct.textContent = `${percent}%`;
+
+      top.append(label, pct);
+
+      const track = document.createElement("div");
+      track.className = `topic-track ${kind}`;
+
+      const fill = document.createElement("span");
+      fill.style.width = `${percent}%`;
+      track.append(fill);
+
+      const meta = document.createElement("small");
+      meta.textContent = `${count} question${count === 1 ? "" : "s"} · ${
+        percent >= 80 ? "Strong understanding" :
+        percent >= 50 ? "Developing" : "Revise this topic"
+      }`;
+
+      row.append(top, track, meta);
+      container.append(row);
+    }
+
+    function renderTopicRows(targetId, topics, emptyMessage, kind) {
+      const target = document.getElementById(targetId);
+      target.replaceChildren();
+
+      if (!topics.length) {
+        const p = document.createElement("p");
+        p.className = "empty-topic";
+        p.textContent = emptyMessage;
+        target.append(p);
+        return;
+      }
+
+      topics.forEach(t => addTopicRow(target, t.name, t.percent, t.total, kind));
+    }
+
+    function makeFeedback(question, index, selectedValue, isCorrect) {
+      const article = document.createElement("article");
+      article.className = "review-item";
+
+      const heading = document.createElement("div");
+      heading.className = "review-question-line";
+
+      const badge = document.createElement("span");
+      badge.className = `answer-status ${isCorrect ? "status-correct" : "status-wrong"}`;
+      badge.textContent = isCorrect ? "✓ Correct" : "↗ Review";
+
+      const topic = document.createElement("span");
+      topic.className = "review-topic";
+      topic.textContent = question.topic || "General concepts";
+      heading.append(badge, topic);
+
+      const qText = document.createElement("h4");
+      qText.textContent = `${index + 1}. ${question.question}`;
+
+      const selected = document.createElement("p");
+      selected.className = "review-answer";
+      selected.textContent = `Your answer: ${
+        selectedValue ? optionLabel(question, selectedValue) : "Not answered"
+      }`;
+
+      const correct = document.createElement("p");
+      correct.className = "review-answer correct-answer-text";
+      correct.textContent = `Correct answer: ${optionLabel(question, correctValue(question))}`;
+
+      const explanation = document.createElement("div");
+      explanation.className = "explanation-box";
+
+      const expLabel = document.createElement("strong");
+      expLabel.textContent = "Why? ";
+
+      explanation.append(
+        expLabel,
+        document.createTextNode(
+          question.explanation || "Revisit the relevant section of your study material."
+        )
+      );
+
+      article.append(heading, qText, selected, correct, explanation);
+      return article;
+    }
+
+    quizForm.addEventListener("submit", event => {
+      event.preventDefault();
+      if (!quizForm.reportValidity()) return;
+
+      let score = 0;
+      const topicStats = {};
+      const review = document.getElementById("feedbackList");
+      review.replaceChildren();
+
+      quizData.forEach((q, i) => {
+        const selected = quizForm.querySelector(`input[name="question_${i}"]:checked`);
+        const selectedValue = selected ? String(selected.value) : "";
+        const right = selectedValue === correctValue(q);
+
+        if (right) score++;
+
+        const topic = (q.topic || "General concepts").trim();
+        if (!topicStats[topic]) topicStats[topic] = { correct: 0, total: 0 };
+        topicStats[topic].total++;
+        if (right) topicStats[topic].correct++;
+
+        review.append(makeFeedback(q, i, selectedValue, right));
+      });
+
+      const total = quizData.length;
+      const percent = total ? Math.round(score / total * 100) : 0;
+
+      document.getElementById("scoreValue").textContent = `${percent}%`;
+      document.getElementById("scoreFraction").textContent = `${score} / ${total} correct`;
+
+      document.getElementById("scoreDetail").textContent =
+        percent >= 80 ? "Great work — keep strengthening your understanding." :
+        percent >= 50 ? "A good start. Targeted revision can help you improve." :
+        "Use the topic breakdown below to guide your next study session.";
+
+      document.getElementById("scoreMeter").style.width = `${percent}%`;
+      document.getElementById("scoreRing").style.setProperty("--score-angle", `${percent * 3.6}deg`);
+
+      document.getElementById("resultHeading").textContent =
+        percent >= 80 ? "You're building strong understanding." :
+        percent >= 50 ? "You're making progress." :
+        "Every attempt is a useful starting point.";
+
+      document.getElementById("resultMessage").textContent =
+        percent >= 80
+          ? "Review the few gaps below and keep challenging yourself."
+          : "Your results show where a little focused practice can make the biggest difference.";
+
+      document.getElementById("reviewCount").textContent =
+        `${total} question${total === 1 ? "" : "s"} reviewed`;
+
+      const topics = Object.entries(topicStats).map(([name, stat]) => ({
+        name,
+        total: stat.total,
+        correct: stat.correct,
+        percent: Math.round(stat.correct / stat.total * 100)
+      }));
+
+      const strong = topics.filter(t => t.percent >= 70).sort((a, b) => b.percent - a.percent);
+      const weak = topics.filter(t => t.percent < 70).sort((a, b) => a.percent - b.percent);
+
+      renderTopicRows(
+        "strongTopics", strong,
+        "Keep practicing to build your first strong topic.",
+        "strong-track"
+      );
+
+      renderTopicRows(
+        "weakTopics", weak,
+        "No major weak topics detected in this quiz. Keep revising to maintain your progress.",
+        "weak-track"
+      );
+
+      const plan = document.getElementById("revisionPlan");
+      plan.replaceChildren();
+
+      const steps = [];
+
+      if (weak.length) {
+        steps.push(
+          `Start with “${weak[0].name}” (${weak[0].percent}% accuracy). Re-read that section and explain the main idea in your own words.`
+        );
+
+        if (weak.length > 1) {
+          steps.push(
+            `Next, practice “${weak[1].name}”. Focus on the concepts behind the incorrect answers, not memorizing option letters.`
+          );
+        }
+      } else {
+        steps.push(
+          "Your topic accuracy is looking strong. Revisit your notes once and summarize the key ideas without looking."
+        );
+      }
+
+      steps.push(
+        "Retake a short quiz after revising and compare your topic-wise accuracy to see what improved."
+      );
+
+      steps.forEach(text => {
+        const li = document.createElement("li");
+        li.textContent = text;
+        plan.append(li);
+      });
+
+      results.classList.remove("hidden");
+      quizForm.classList.add("quiz-hidden");
+      document.querySelector(".quiz-progress-card").classList.add("quiz-hidden");
+      results.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.getElementById("retakeButton").addEventListener("click", () => {
+      quizForm.reset();
+      quizForm.classList.remove("quiz-hidden");
+      document.querySelector(".quiz-progress-card").classList.remove("quiz-hidden");
+      results.classList.add("hidden");
+      updateProgress();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>
